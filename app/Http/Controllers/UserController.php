@@ -73,21 +73,19 @@ class UserController extends Controller
     // Logout User
 
     public function logout(Request $request)
-{
-    // Ensure the user is authenticated
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    if (!$user) {
-        return response()->json(['message' => 'User not authenticated'], 401);
+        if (!$user) {
+            return response()->json(['message' => 'User not authenticated'], 401);
+        }
+
+        $user->tokens->each(function ($token) {
+            $token->delete();
+        });
+
+        return response()->json(['message' => 'Logged out successfully'], 200);
     }
-
-    // Revoke all tokens for the authenticated user
-    $user->tokens->each(function ($token) {
-        $token->delete();
-    });
-
-    return response()->json(['message' => 'Logged out successfully'], 200);
-}
 
     
 
@@ -116,13 +114,11 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('profile')) {
-            // Delete old profile image if exists
             if ($user->profile) {
                 $oldImagePath = str_replace('/storage/', 'public/', $user->profile);
                 Storage::delete($oldImagePath);
             }
 
-            // Upload new profile image
             $profilePath = $request->file('profile')->store('public/profiles');
             $user->profile = Storage::url($profilePath);
         }
