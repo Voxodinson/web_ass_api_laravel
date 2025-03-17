@@ -17,4 +17,9 @@ class Product extends Model
         'images' => 'array',
         'rating' => 'float',
     ];
+    
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

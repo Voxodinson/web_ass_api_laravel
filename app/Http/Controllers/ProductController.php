@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    // Helper function to generate image URLs
     private function generateImageUrls($imageFilenames)
     {
         return collect($imageFilenames)->map(function($filename) {
@@ -19,7 +18,6 @@ class ProductController extends Controller
     {
         $query = Product::query();
 
-        // Search logic
         if ($request->has('search')) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%$search%")
@@ -30,7 +28,6 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 10);
         $products = $query->paginate($perPage);
 
-        // Add image URLs to each product
         $products->getCollection()->transform(function ($product) {
             $product->image_urls = $this->generateImageUrls(json_decode($product->images, true));
             return $product;
@@ -47,7 +44,6 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        // Decode and generate image URLs
         $product->images = json_decode($product->images, true);
         $product->image_urls = $this->generateImageUrls($product->images);
 
@@ -56,7 +52,6 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        // Validation
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -71,10 +66,8 @@ class ProductController extends Controller
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // Create product
         $product = Product::create($request->except('images'));
 
-        // Store images and create image filenames
         $imageFilenames = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
@@ -84,14 +77,10 @@ class ProductController extends Controller
             }
         }
 
-        // Store image filenames as JSON in the product's images field
         $product->update(['images' => json_encode($imageFilenames)]);
 
-        // Return the product with image URLs
         return response()->json([
             'message' => 'Product created successfully',
-            'product' => $product,
-            'image_urls' => $this->generateImageUrls($imageFilenames)
         ], 201);
     }
 
@@ -103,7 +92,6 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        // Validation
         $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -118,18 +106,14 @@ class ProductController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5'
         ]);
 
-        // Update the product's basic info
         $product->update($request->except('images'));
 
-        // Handle image updates if any
         if ($request->hasFile('images')) {
-            // Delete old images
             $oldImages = json_decode($product->images, true);
             foreach ($oldImages as $oldImage) {
                 Storage::disk('public')->delete('products/' . $oldImage);
             }
 
-            // Store new images and filenames
             $newImageFilenames = [];
             foreach ($request->file('images') as $image) {
                 if ($image->isValid()) {
@@ -139,16 +123,12 @@ class ProductController extends Controller
                 }
             }
 
-            // Update the product's image filenames
             $product->images = json_encode($newImageFilenames);
             $product->save();
         }
 
-        // Return the updated product with new image URLs
         return response()->json([
             'message' => 'Product updated successfully',
-            'product' => $product,
-            'image_urls' => $this->generateImageUrls(json_decode($product->images, true))
         ]);
     }
 

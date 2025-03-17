@@ -9,18 +9,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    
     public function up()
     {
         Schema::create('order_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->id();  // Auto-incrementing primary key
+            $table->foreignId('order_id')->constrained()->onDelete('cascade');  // Foreign key to orders table
+            $table->integer('product_id');  // Assuming product_id is an integer
             $table->integer('quantity');
-            $table->decimal('price', 10, 2);
-            $table->decimal('total', 10, 2);
-            $table->string('size');
             $table->string('color');
+            $table->string('size');
             $table->timestamps();
         });
     }
@@ -30,4 +27,3 @@ return new class extends Migration
         Schema::dropIfExists('order_items');
     }
 };
-

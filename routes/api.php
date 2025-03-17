@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CheckoutController;
 
 
 // user
@@ -37,11 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/companies/{id}', [CompanyController::class, 'destroy']);
 });
 
-
-//Order Detail
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('orders/', [OrderController::class, 'store']);
-    Route::get('orders/', [OrderController::class, 'index']);
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'update']);
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
