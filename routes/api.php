@@ -39,10 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 //Order Detail
-Route::prefix('orders')->group(function () {
-    Route::post('/', [OrderController::class, 'store']);
-    Route::get('/', [OrderController::class, 'index']);
-    Route::get('{id}', [OrderController::class, 'show']);
-    Route::put('{id}', [OrderController::class, 'update']);
-    Route::delete('{id}', [OrderController::class, 'destroy']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('orders/', [OrderController::class, 'store']);
+    Route::get('orders/', [OrderController::class, 'index']);
+    Route::get('orders/{id}', [OrderController::class, 'show']);
+    Route::put('orders/{id}', [OrderController::class, 'update']);
+    Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 });
