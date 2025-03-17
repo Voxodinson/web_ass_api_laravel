@@ -9,14 +9,16 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'payment_method', 'payment_status', 'transaction_id', 'total_amount',
-        'shipping_address', 'shipping_city', 'shipping_zip', 'shipping_country'
+        'user_id',
+        'payment_method',
+        'payment_status',
+        'transaction_id',
+        'total_amount',
+        'shipping_address',
+        'shipping_city',
+        'shipping_zip',
+        'shipping_country',
     ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function orderItems()
     {
