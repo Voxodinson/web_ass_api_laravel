@@ -29,6 +29,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 });
 
+//public products
+Route::prefix('public')->group(function () {
+    Route::get('/user/products', [ProductController::class, 'index']);
+    Route::get('/user/products/{id}', [ProductController::class, 'show']);
+});
+
 //company management
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/companies', [CompanyController::class, 'index']);

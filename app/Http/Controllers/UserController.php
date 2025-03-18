@@ -17,13 +17,16 @@ class UserController extends Controller
             'name' => 'required|string|max:255|unique:users,name',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
+            'role' => 'required|in:admin,user',
+            'address' => 'nullable|string',
+            'dob' => 'nullable|date',
             'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         // Handle profile image upload
         $profileUrl = null;
         if ($request->hasFile('profile')) {
-            $profilePath = $request->file('profile')->store('public/profiles');
+            $profilePath = $request->file('profile')->store('public/users');
             $profileUrl = Storage::url($profilePath);
         }
 
@@ -31,15 +34,18 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
+            'role' => $validated['role'],
+            'address' => $validated['address'],
+            'dob' => $validated['dob'],
             'profile' => $profileUrl,
         ]);
 
         return response()->json([
             'message' => 'User created successfully',
-            'status' => 'success',
-            'data' => $user,
+            'status' => 'OK'
         ], 201);
     }
+
 
     // Login User and Generate Token
     public function login(Request $request)
@@ -98,7 +104,10 @@ class UserController extends Controller
             'name' => 'nullable|string|max:255|unique:users,name,' . $user->id,
             'email' => 'nullable|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
-            'profile' => 'nullable',
+            'role' => 'nullable|in:admin,user',
+            'address' => 'nullable|string',
+            'dob' => 'nullable|date',
+            'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($request->has('name')) {
@@ -113,13 +122,25 @@ class UserController extends Controller
             $user->password = bcrypt($validated['password']);
         }
 
+        if ($request->has('role')) {
+            $user->role = $validated['role'];
+        }
+
+        if ($request->has('address')) {
+            $user->address = $validated['address'];
+        }
+
+        if ($request->has('dob')) {
+            $user->dob = $validated['dob'];
+        }
+
         if ($request->hasFile('profile')) {
             if ($user->profile) {
                 $oldImagePath = str_replace('/storage/', 'public/', $user->profile);
                 Storage::delete($oldImagePath);
             }
 
-            $profilePath = $request->file('profile')->store('public/profiles');
+            $profilePath = $request->file('profile')->store('public/users');
             $user->profile = Storage::url($profilePath);
         }
 
@@ -131,6 +152,7 @@ class UserController extends Controller
             'data' => $user,
         ]);
     }
+
 
     // Get All Users (Paginated)
     public function index()
@@ -171,7 +193,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User deleted successfully',
-            'status' => 'success',
+            'status' => 'OK',
         ]);
     }
 }

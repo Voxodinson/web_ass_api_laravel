@@ -9,7 +9,7 @@ class ProductController extends Controller
 {
     private function generateImageUrls($imageFilenames)
     {
-        return collect($imageFilenames)->map(function($filename) {
+        return collect($imageFilenames)->map(function ($filename) {
             return asset("storage/products/$filename");
         });
     }
@@ -21,8 +21,13 @@ class ProductController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%$search%")
-                  ->orWhere('category', 'LIKE', "%$search%")
-                  ->orWhere('brand', 'LIKE', "%$search%");
+                ->orWhere('category', 'LIKE', "%$search%")
+                ->orWhere('brand', 'LIKE', "%$search%");
+        }
+
+        if ($request->has('product_type') && !empty($request->product_type)) {
+            $productType = $request->product_type;
+            $query->where('product_type', $productType);
         }
 
         $perPage = $request->input('per_page', 10);
@@ -63,7 +68,8 @@ class ProductController extends Controller
             'category' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
             'images' => 'required|array',
-            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'product_type' => 'required|string|in:men,women,kids',  // New validation rule for product_type
         ]);
 
         $product = Product::create($request->except('images'));
@@ -103,7 +109,8 @@ class ProductController extends Controller
             'category' => 'nullable|string',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'rating' => 'nullable|numeric|min:0|max:5'
+            'rating' => 'nullable|numeric|min:0|max:5',
+            'product_type' => 'sometimes|string|in:men,women,kids',  // New validation rule for product_type
         ]);
 
         $product->update($request->except('images'));
