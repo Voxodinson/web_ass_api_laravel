@@ -13,8 +13,12 @@ class OrderController extends Controller
         $orders = Order::with('orderItems')->paginate($perPage);
 
         return response()->json([
-            'message' => 'Orders retrieved successfully',
-            'data' => $orders
+            'message' => 'Orders retrieved successfully.',
+            'data' => $orders->items(),
+            'total' => $orders->total(),
+            'per_page' => $orders->perPage(),
+            'current_page' => $orders->currentPage(),
+            'last_page' => $orders->lastPage()
         ]);
     }
 
