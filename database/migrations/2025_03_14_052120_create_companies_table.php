@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->json('phone'); // Store multiple phone numbers as a JSON array
+            $table->json('phone');
             $table->text('address');
             $table->string('website')->nullable();
             $table->text('description')->nullable();
-            $table->string('photo')->nullable(); // Add a column to store the photo file path
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

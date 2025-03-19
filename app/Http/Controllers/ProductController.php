@@ -38,7 +38,14 @@ class ProductController extends Controller
             return $product;
         });
 
-        return response()->json($products);
+        return response()->json([
+            'message' => 'Products retrieved successfully.',
+            'data' => $products->items(),
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage()
+        ]);
     }
 
     public function show($id)

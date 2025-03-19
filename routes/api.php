@@ -6,6 +6,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\SocialMediaController;
 
 
 // user
@@ -33,6 +35,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::prefix('public')->group(function () {
     Route::get('/user/products', [ProductController::class, 'index']);
     Route::get('/user/products/{id}', [ProductController::class, 'show']);
+    
+    Route::get('/feedbacks', [FeedbackController::class, 'index']);
+
+    Route::get('social', [SocialMediaController::class, 'index']);
 });
 
 //company management
@@ -50,4 +56,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'update']);
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
+});
+
+//feedback
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('feedbacks', [FeedbackController::class, 'index']);
+    Route::post('feedbacks', [FeedbackController::class, 'store']);
+    Route::get('feedbacks/{id}', [FeedbackController::class, 'show']);
+    Route::put('feedbacks/{id}', [FeedbackController::class, 'update']);
+    Route::delete('feedbacks/{id}', [FeedbackController::class, 'destroy']);
+});
+
+//social media
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('social', [SocialMediaController::class, 'index']);
+    Route::post('social', [SocialMediaController::class, 'store']);
+    Route::get('social/{id}', [SocialMediaController::class, 'show']);
+    Route::put('social/{id}', [SocialMediaController::class, 'update']);
+    Route::delete('social/{id}', [SocialMediaController::class, 'destroy']);
 });

@@ -42,7 +42,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User created successfully',
-            'status' => 'OK'
+            'status' => 'OK',
         ], 201);
     }
 
@@ -153,11 +153,19 @@ class UserController extends Controller
         ]);
     }
 
-
-    // Get All Users (Paginated)
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::paginate(10);
+        $query = User::query();
+    
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where('name', 'LIKE', "%$search%")
+                  ->orWhere('email', 'LIKE', "%$search%")
+                  ->orWhere('role', 'LIKE', "%$search%");
+        }
+    
+        $perPage = $request->input('per_page', 10);
+        $users = $query->paginate($perPage);
 
         return response()->json([
             'message' => 'Users retrieved successfully',
@@ -166,9 +174,10 @@ class UserController extends Controller
             'per_page' => $users->perPage(),
             'total' => $users->total(),
             'current_page' => $users->currentPage(),
-            'last_page' => $users->lastPage(),
+            'last_page' => $users->lastPage()
         ]);
     }
+    
 
     // Get a Single User
     public function show($id)

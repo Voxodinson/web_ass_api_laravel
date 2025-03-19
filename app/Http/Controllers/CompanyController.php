@@ -22,8 +22,15 @@ class CompanyController extends Controller
 
         $perPage = $request->input('per_page', 10);
         $companies = $query->paginate($perPage);
-
-        return response()->json($companies);
+    
+        return response()->json([
+            'message' => 'Companies retrieved successfully.',
+            'data' => $companies->items(),
+            'total' => $companies->total(),
+            'per_page' => $companies->perPage(),
+            'current_page' => $companies->currentPage(),
+            'last_page' => $companies->lastPage()
+        ]);
     }
 
     public function store(Request $request)
@@ -37,15 +44,25 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'store_locations' => 'nullable|json',
         ]);
 
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('company_photos', 'public');
+            $photoPath = $request->file('photo')->store('company_photos', 'public/company');
         } else {
             $photoPath = null;
         }
 
-        $company = Company::create(array_merge($request->all(), ['photo' => $photoPath]));
+        $company = Company::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'website' => $request->website,
+            'description' => $request->description,
+            'photo' => $photoPath,
+            'store_locations' => $request->store_locations ? json_decode($request->store_locations, true) : null,
+        ]);
 
         return response()->json($company, 201);
     }
@@ -58,11 +75,8 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Company not found'], 404);
         }
 
-        if ($company->photo) {
-            $company->photo_url = Storage::url($company->photo);
-        } else {
-            $company->photo_url = null;
-        }
+        $company->photo_url = $company->photo ? Storage::url($company->photo) : null;
+        $company->store_locations = json_decode($company->store_locations);
 
         return response()->json($company);
     }
@@ -84,6 +98,7 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'store_locations' => 'nullable|json',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -96,7 +111,16 @@ class CompanyController extends Controller
             $photoPath = $company->photo;
         }
 
-        $company->update(array_merge($request->all(), ['photo' => $photoPath]));
+        $company->update([
+            'name' => $request->name ?? $company->name,
+            'email' => $request->email ?? $company->email,
+            'phone' => $request->phone ?? $company->phone,
+            'address' => $request->address ?? $company->address,
+            'website' => $request->website ?? $company->website,
+            'description' => $request->description ?? $company->description,
+            'photo' => $photoPath,
+            'store_locations' => $request->store_locations ? json_decode($request->store_locations, true) : $company->store_locations,
+        ]);
 
         return response()->json($company);
     }
