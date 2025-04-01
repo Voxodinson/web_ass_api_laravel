@@ -10,17 +10,27 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-        $orders = Order::with('orderItems')->paginate($perPage);
+        $orders = Order::with(['orderItems', 'user:id,name,email'])->paginate($perPage);
 
+        $ordersData = collect($orders->items())->map(function ($order) {
+            $order->user_name = $order->user ? $order->user->name : null;
+            $order->user_email = $order->user ? $order->user->email : null;
+            unset($order->user);
+            return $order;
+        });
+    
         return response()->json([
             'message' => 'Orders retrieved successfully.',
-            'data' => $orders->items(),
+            'data' => $ordersData,
             'total' => $orders->total(),
             'per_page' => $orders->perPage(),
             'current_page' => $orders->currentPage(),
             'last_page' => $orders->lastPage()
         ]);
     }
+    
+
+    
 
     public function store(Request $request)
     {
@@ -70,10 +80,15 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::with('orderItems')->findOrFail($id);
+        $order = Order::with(['orderItems', 'user:id,name,email'])->findOrFail($id);
+
+        $order->user_name = $order->user ? $order->user->name : null;
+        $order->user_email = $order->user ? $order->user->email : null;
+        unset($order->user);
 
         return response()->json($order);
     }
+
 
     public function update(Request $request, $id)
     {
