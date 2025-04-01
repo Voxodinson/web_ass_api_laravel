@@ -106,8 +106,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6',
             'role' => 'nullable|in:admin,user',
             'address' => 'nullable|string',
-            'dob' => 'nullable|date',
-            'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'dob' => 'nullable|date'
         ]);
 
         if ($request->has('name')) {
@@ -134,15 +133,6 @@ class UserController extends Controller
             $user->dob = $validated['dob'];
         }
 
-        if ($request->hasFile('profile')) {
-            if ($user->profile) {
-                $oldImagePath = str_replace('/storage/', 'public/', $user->profile);
-                Storage::delete($oldImagePath);
-            }
-
-            $profilePath = $request->file('profile')->store('public/users');
-            $user->profile = Storage::url($profilePath);
-        }
 
         $user->save();
 
@@ -184,11 +174,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        return response()->json([
-            'message' => 'User retrieved successfully',
-            'status' => 'success',
-            'data' => $user,
-        ]);
+        return response()->json($user);
     }
 
     // Delete User
