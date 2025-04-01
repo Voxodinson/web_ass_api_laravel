@@ -117,7 +117,7 @@ class ProductController extends Controller
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'rating' => 'nullable|numeric|min:0|max:5',
-            'product_type' => 'sometimes|string|in:men,women,kids',  // New validation rule for product_type
+            'product_type' => 'sometimes|string|in:men,women,kids',
         ]);
 
         $product->update($request->except('images'));
