@@ -10,27 +10,37 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-        $orders = Order::with(['orderItems', 'user:id,name,email'])->paginate($perPage);
 
-        $ordersData = collect($orders->items())->map(function ($order) {
-            $order->user_name = $order->user ? $order->user->name : null;
-            $order->user_email = $order->user ? $order->user->email : null;
-            unset($order->user);
-            return $order;
+        $orders = Order::with([
+            'orderItems.product:id,name,images',
+            'user:id,name,email'
+        ])->paginate($perPage);
+
+        $ordersData = $orders->map(function ($order) {
+            return array_merge($order->toArray(), [
+                'user_name' => $order->user?->name,
+                'user_email' => $order->user?->email,
+                'order_items' => $order->orderItems->map(function ($item) {
+                    $product = $item->product;
+                    return array_merge($item->toArray(), [
+                        'product_name' => $product ? $product->name : 'N/A',
+                        'first_image' => $product && is_array($product->images) && count($product->images) > 0 
+                            ? $product->images[0] 
+                            : null,
+                    ]);
+                }),
+            ]);
         });
-    
+
         return response()->json([
             'message' => 'Orders retrieved successfully.',
             'data' => $ordersData,
             'total' => $orders->total(),
             'per_page' => $orders->perPage(),
             'current_page' => $orders->currentPage(),
-            'last_page' => $orders->lastPage()
+            'last_page' => $orders->lastPage(),
         ]);
     }
-    
-
-    
 
     public function store(Request $request)
     {
