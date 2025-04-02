@@ -155,34 +155,25 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
-
+    
         if ($request->has('search')) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%$search%")
-                  ->orWhere('email', 'LIKE', "%$search%")
-                  ->orWhere('role', 'LIKE', "%$search%");
+                ->orWhere('email', 'LIKE', "%$search%")
+                ->orWhere('role', 'LIKE', "%$search%");
         }
-
-        $perPage = $request->input('per_page', 10);
-        $users = $query->paginate($perPage);
-
-        $users->getCollection()->transform(function ($user) {
+    
+        $users = $query->get()->transform(function ($user) {
             $user->profile = $user->profile ? asset($user->profile) : null;
             return $user;
         });
-
+    
         return response()->json([
             'message' => 'Users retrieved successfully',
             'status' => 'success',
-            'data' => $users->items(),
-            'per_page' => $users->perPage(),
-            'total' => $users->total(),
-            'current_page' => $users->currentPage(),
-            'last_page' => $users->lastPage()
+            'data' => $users,
         ]);
     }
-
-
 
     // Get a Single User
     public function show($id)
