@@ -108,27 +108,26 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
-
+    
         $validated = $request->validate([
             'name' => 'nullable|string|max:255|unique:users,name,' . $user->id,
             'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:6',
             'role' => 'nullable|in:admin,user',
             'address' => 'nullable|string',
             'dob' => 'nullable|date',
             'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-
-        $user->fill($validated);
-
+    
+        $user->fill($request->only(['name', 'email', 'role', 'address', 'dob']));
+    
         // Handle profile image update
         if ($request->hasFile('profile')) {
             $uploadPath = public_path('uploads/images/users');
-
+    
             if (!file_exists($uploadPath)) {
                 mkdir($uploadPath, 0755, true); // Create directory if it doesn't exist
             }
-
+    
             // Delete the old profile image if it exists
             if ($user->profile) {
                 $oldProfilePath = public_path(str_replace(asset('/'), '', $user->profile));
@@ -136,15 +135,15 @@ class UserController extends Controller
                     unlink($oldProfilePath);
                 }
             }
-
+    
             $profile = $request->file('profile');
             $filename = $profile->hashName();
             $profile->move($uploadPath, $filename);
             $user->profile = asset('uploads/images/users/' . $filename);
         }
-
+    
         $user->save();
-
+    
         return response()->json([
             'message' => 'User updated successfully',
             'status' => 'success',
