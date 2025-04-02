@@ -15,40 +15,36 @@ class ProductController extends Controller
             return asset($this->imagePath . '/' . $filename);
         });
     }
-
     public function index(Request $request)
-    {
-        $query = Product::query();
+{
+    $query = Product::query();
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%$search%")
-                ->orWhere('category', 'LIKE', "%$search%")
-                ->orWhere('brand', 'LIKE', "%$search%");
-        }
-
-        if ($request->has('product_type') && !empty($request->product_type)) {
-            $productType = $request->product_type;
-            $query->where('product_type', $productType);
-        }
-
-        $perPage = $request->input('per_page', 10);
-        $products = $query->paginate($perPage);
-
-        $products->getCollection()->transform(function ($product) {
-            $product->image_urls = $this->generateImageUrls(json_decode($product->images, true));
-            return $product;
-        });
-
-        return response()->json([
-            'message' => 'Products retrieved successfully.',
-            'data' => $products->items(),
-            'total' => $products->total(),
-            'per_page' => $products->perPage(),
-            'current_page' => $products->currentPage(),
-            'last_page' => $products->lastPage()
-        ]);
+    if ($request->has('search')) {
+        $search = $request->search;
+        $query->where('name', 'LIKE', "%$search%")
+            ->orWhere('category', 'LIKE', "%$search%")
+            ->orWhere('brand', 'LIKE', "%$search%");
     }
+
+    if ($request->has('product_type') && !empty($request->product_type)) {
+        $productType = $request->product_type;
+        $query->where('product_type', $productType);
+    }
+
+    $products = $query->get();
+
+    $products->transform(function ($product) {
+        $decodedImages = json_decode($product->images, true);
+        $product->images = $this->generateImageUrls($decodedImages);
+        $product->image = isset($decodedImages[0]) ? asset('uploads/images/products/' . $decodedImages[0]) : null;
+        return $product;
+    });
+
+    return response()->json([
+        'message' => 'Products retrieved successfully.',
+        'data' => $products,
+    ]);
+}
 
     public function show($id)
     {

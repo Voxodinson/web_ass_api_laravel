@@ -25,7 +25,7 @@ class OrderController extends Controller
                     $product = $item->product;
                     return array_merge($item->toArray(), [
                         'product_name' => $product ? $product->name : 'N/A',
-                        'first_image_url' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
+                        'image' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
                             ? asset('uploads/images/products/' . json_decode($product->images, true)[0])
                             : null,
                     ]);
@@ -100,7 +100,7 @@ class OrderController extends Controller
                 $product = $item->product;
                 return array_merge($item->toArray(), [
                     'product_name' => $product ? $product->name : 'N/A',
-                    'first_image_url' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
+                    'image' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
                         ? asset('uploads/images/products/' . json_decode($product->images, true)[0])
                         : null,
                 ]);
