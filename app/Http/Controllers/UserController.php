@@ -23,13 +23,6 @@ class UserController extends Controller
             'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Handle profile image upload
-        $profileUrl = null;
-        if ($request->hasFile('profile')) {
-            $profilePath = $request->file('profile')->store('public/users');
-            $profileUrl = Storage::url($profilePath);
-        }
-
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -37,8 +30,24 @@ class UserController extends Controller
             'role' => $validated['role'],
             'address' => $validated['address'],
             'dob' => $validated['dob'],
-            'profile' => $profileUrl,
         ]);
+
+        // Handle profile image upload after user creation
+        $profileUrl = null;
+        if ($request->hasFile('profile')) {
+            $uploadPath = public_path('uploads/images/users');
+
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true); // Create directory if it doesn't exist
+            }
+
+            $profile = $request->file('profile');
+            $filename = $profile->hashName();
+            $profile->move($uploadPath, $filename);
+            $profileUrl = asset('uploads/images/users/' . $filename);
+            $user->profile = $profileUrl;
+            $user->save(); // Save the profile URL to the user model
+        }
 
         return response()->json([
             'message' => 'User created successfully',
@@ -93,7 +102,7 @@ class UserController extends Controller
         return response()->json(['message' => 'Logged out successfully'], 200);
     }
 
-    
+
 
     // Update User
     public function update(Request $request, $id)
@@ -106,33 +115,33 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6',
             'role' => 'nullable|in:admin,user',
             'address' => 'nullable|string',
-            'dob' => 'nullable|date'
+            'dob' => 'nullable|date',
+            'profile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        if ($request->has('name')) {
-            $user->name = $validated['name'];
-        }
+        $user->fill($validated);
 
-        if ($request->has('email')) {
-            $user->email = $validated['email'];
-        }
+        // Handle profile image update
+        if ($request->hasFile('profile')) {
+            $uploadPath = public_path('uploads/images/users');
 
-        if ($request->has('password')) {
-            $user->password = bcrypt($validated['password']);
-        }
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true); // Create directory if it doesn't exist
+            }
 
-        if ($request->has('role')) {
-            $user->role = $validated['role'];
-        }
+            // Delete the old profile image if it exists
+            if ($user->profile) {
+                $oldProfilePath = public_path(str_replace(asset('/'), '', $user->profile));
+                if (file_exists($oldProfilePath)) {
+                    unlink($oldProfilePath);
+                }
+            }
 
-        if ($request->has('address')) {
-            $user->address = $validated['address'];
+            $profile = $request->file('profile');
+            $filename = $profile->hashName();
+            $profile->move($uploadPath, $filename);
+            $user->profile = asset('uploads/images/users/' . $filename);
         }
-
-        if ($request->has('dob')) {
-            $user->dob = $validated['dob'];
-        }
-
 
         $user->save();
 
@@ -146,16 +155,21 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::query();
-    
+
         if ($request->has('search')) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%$search%")
                   ->orWhere('email', 'LIKE', "%$search%")
                   ->orWhere('role', 'LIKE', "%$search%");
         }
-    
+
         $perPage = $request->input('per_page', 10);
         $users = $query->paginate($perPage);
+
+        $users->getCollection()->transform(function ($user) {
+            $user->profile = $user->profile ? asset($user->profile) : null;
+            return $user;
+        });
 
         return response()->json([
             'message' => 'Users retrieved successfully',
@@ -167,13 +181,14 @@ class UserController extends Controller
             'last_page' => $users->lastPage()
         ]);
     }
-    
+
+
 
     // Get a Single User
     public function show($id)
     {
         $user = User::findOrFail($id);
-
+        $user->profile = $user->profile ? asset($user->profile) : null;
         return response()->json($user);
     }
 
@@ -182,7 +197,10 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         if ($user->profile) {
-            Storage::delete(str_replace('/storage/', 'public/', $user->profile));
+            $oldProfilePath = public_path(str_replace(asset('/'), '', $user->profile));
+            if (file_exists($oldProfilePath)) {
+                unlink($oldProfilePath);
+            }
         }
         $user->delete();
 

@@ -1,16 +1,18 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    private $imagePath = 'uploads/images/products';
+
     private function generateImageUrls($imageFilenames)
     {
         return collect($imageFilenames)->map(function ($filename) {
-            return asset("storage/products/$filename");
+            return asset($this->imagePath . '/' . $filename);
         });
     }
 
@@ -76,16 +78,20 @@ class ProductController extends Controller
             'rating' => 'nullable|numeric|min:0|max:5',
             'images' => 'required|array',
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'product_type' => 'required|string|in:men,women,kids',  // New validation rule for product_type
+            'product_type' => 'required|string|in:men,women,kids',
         ]);
 
         $product = Product::create($request->except('images'));
 
         $imageFilenames = [];
         if ($request->hasFile('images')) {
+            $uploadPath = public_path($this->imagePath);
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
             foreach ($request->file('images') as $image) {
                 $filename = $image->hashName();
-                $image->storeAs('products', $filename, 'public');
+                $image->move($uploadPath, $filename);
                 $imageFilenames[] = $filename;
             }
         }
@@ -123,16 +129,24 @@ class ProductController extends Controller
         $product->update($request->except('images'));
 
         if ($request->hasFile('images')) {
+            $uploadPath = public_path($this->imagePath);
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
             $oldImages = json_decode($product->images, true);
             foreach ($oldImages as $oldImage) {
-                Storage::disk('public')->delete('products/' . $oldImage);
+                $oldImagePath = public_path($this->imagePath . '/' . $oldImage);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
             }
 
             $newImageFilenames = [];
             foreach ($request->file('images') as $image) {
                 if ($image->isValid()) {
                     $filename = $image->hashName();
-                    $image->storeAs('products', $filename, 'public');
+                    $image->move($uploadPath, $filename);
                     $newImageFilenames[] = $filename;
                 }
             }
@@ -154,10 +168,13 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        // Delete product images from storage
+        // Delete product images from the public directory
         $images = json_decode($product->images, true);
         foreach ($images as $image) {
-            Storage::disk('public')->delete('products/' . $image);
+            $imagePath = public_path($this->imagePath . '/' . $image);
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
         }
 
         // Delete the product
