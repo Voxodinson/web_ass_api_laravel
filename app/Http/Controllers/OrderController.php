@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Order;
@@ -24,8 +25,8 @@ class OrderController extends Controller
                     $product = $item->product;
                     return array_merge($item->toArray(), [
                         'product_name' => $product ? $product->name : 'N/A',
-                        'first_image' => $product && is_array($product->images) && count($product->images) > 0 
-                            ? $product->images[0] 
+                        'first_image_url' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
+                            ? asset('uploads/images/products/' . json_decode($product->images, true)[0])
                             : null,
                     ]);
                 }),
@@ -55,10 +56,10 @@ class OrderController extends Controller
             'shipping_zip' => 'required|string',
             'shipping_country' => 'required|string',
             'items' => 'required|array',
-            'items.*.product_id' => 'required|integer',
-            'items.*.quantity' => 'required|integer',
-            'items.*.color' => 'required|string',
-            'items.*.size' => 'required|string',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.color' => 'nullable|string|max:255',
+            'items.*.size' => 'nullable|string|max:255',
         ]);
 
         $order = Order::create([
@@ -77,8 +78,8 @@ class OrderController extends Controller
             $order->orderItems()->create([
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
-                'color' => $item['color'],
-                'size' => $item['size'],
+                'color' => $item['color'] ?? null,
+                'size' => $item['size'] ?? null,
             ]);
         }
 
@@ -90,19 +91,40 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::with(['orderItems', 'user:id,name,email'])->findOrFail($id);
+        $order = Order::with(['orderItems.product:id,name,images', 'user:id,name,email'])->findOrFail($id);
 
-        $order->user_name = $order->user ? $order->user->name : null;
-        $order->user_email = $order->user ? $order->user->email : null;
-        unset($order->user);
+        $orderData = array_merge($order->toArray(), [
+            'user_name' => $order->user?->name,
+            'user_email' => $order->user?->email,
+            'order_items' => $order->orderItems->map(function ($item) {
+                $product = $item->product;
+                return array_merge($item->toArray(), [
+                    'product_name' => $product ? $product->name : 'N/A',
+                    'first_image_url' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
+                        ? asset('uploads/images/products/' . json_decode($product->images, true)[0])
+                        : null,
+                ]);
+            }),
+        ]);
+        unset($orderData['user']);
 
-        return response()->json($order);
+        return response()->json($orderData);
     }
 
 
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
+        $request->validate([
+            'payment_method' => 'sometimes|string',
+            'payment_status' => 'sometimes|string',
+            'transaction_id' => 'sometimes|string',
+            'total_amount' => 'sometimes|numeric',
+            'shipping_address' => 'sometimes|string',
+            'shipping_city' => 'sometimes|string',
+            'shipping_zip' => 'sometimes|string',
+            'shipping_country' => 'sometimes|string',
+        ]);
         $order->update($request->only([
             'payment_method',
             'payment_status',

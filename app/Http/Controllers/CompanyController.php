@@ -1,12 +1,14 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Company;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller
 {
+    private $imagePath = 'uploads/images/companies';
+
     public function index(Request $request)
     {
         $query = Company::query();
@@ -14,15 +16,21 @@ class CompanyController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%$search%")
-                  ->orWhere('email', 'LIKE', "%$search%")
-                  ->orWhere('phone', 'LIKE', "%$search%")
-                  ->orWhere('address', 'LIKE', "%$search%")
-                  ->orWhere('website', 'LIKE', "%$search%");
+                ->orWhere('email', 'LIKE', "%$search%")
+                ->orWhere('phone', 'LIKE', "%$search%")
+                ->orWhere('address', 'LIKE', "%$search%")
+                ->orWhere('website', 'LIKE', "%$search%");
         }
 
         $perPage = $request->input('per_page', 10);
         $companies = $query->paginate($perPage);
-    
+
+        $companies->getCollection()->transform(function ($company) {
+            $company->photo_url = $company->photo ? asset($this->imagePath . '/' . $company->photo) : null;
+            $company->store_locations = json_decode($company->store_locations);
+            return $company;
+        });
+
         return response()->json([
             'message' => 'Companies retrieved successfully.',
             'data' => $companies->items(),
@@ -47,22 +55,28 @@ class CompanyController extends Controller
             'store_locations' => 'nullable|json',
         ]);
 
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('company_photos', 'public/company');
-        } else {
-            $photoPath = null;
-        }
-
-        $company = Company::create([
+        $company = new Company([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'website' => $request->website,
             'description' => $request->description,
-            'photo' => $photoPath,
             'store_locations' => $request->store_locations ? json_decode($request->store_locations, true) : null,
         ]);
+
+        if ($request->hasFile('photo')) {
+            $uploadPath = public_path($this->imagePath);
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+            $photo = $request->file('photo');
+            $filename = $photo->hashName();
+            $photo->move($uploadPath, $filename);
+            $company->photo = $filename;
+        }
+
+        $company->save();
 
         return response()->json($company, 201);
     }
@@ -75,7 +89,7 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Company not found'], 404);
         }
 
-        $company->photo_url = $company->photo ? Storage::url($company->photo) : null;
+        $company->photo_url = $company->photo ? asset($this->imagePath . '/' . $company->photo) : null;
         $company->store_locations = json_decode($company->store_locations);
 
         return response()->json($company);
@@ -101,26 +115,35 @@ class CompanyController extends Controller
             'store_locations' => 'nullable|json',
         ]);
 
+        $company->name = $request->name ?? $company->name;
+        $company->email = $request->email ?? $company->email;
+        $company->phone = $request->phone ?? $company->phone;
+        $company->address = $request->address ?? $company->address;
+        $company->website = $request->website ?? $company->website;
+        $company->description = $request->description ?? $company->description;
+        $company->store_locations = $request->store_locations ? json_decode($request->store_locations, true) : $company->store_locations;
+
         if ($request->hasFile('photo')) {
-            if ($company->photo && Storage::disk('public')->exists($company->photo)) {
-                Storage::disk('public')->delete($company->photo);
+            $uploadPath = public_path($this->imagePath);
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
             }
 
-            $photoPath = $request->file('photo')->store('company_photos', 'public');
-        } else {
-            $photoPath = $company->photo;
+            // Delete the old photo if it exists
+            if ($company->photo) {
+                $oldPhotoPath = public_path($this->imagePath . '/' . $company->photo);
+                if (file_exists($oldPhotoPath)) {
+                    unlink($oldPhotoPath);
+                }
+            }
+
+            $photo = $request->file('photo');
+            $filename = $photo->hashName();
+            $photo->move($uploadPath, $filename);
+            $company->photo = $filename;
         }
 
-        $company->update([
-            'name' => $request->name ?? $company->name,
-            'email' => $request->email ?? $company->email,
-            'phone' => $request->phone ?? $company->phone,
-            'address' => $request->address ?? $company->address,
-            'website' => $request->website ?? $company->website,
-            'description' => $request->description ?? $company->description,
-            'photo' => $photoPath,
-            'store_locations' => $request->store_locations ? json_decode($request->store_locations, true) : $company->store_locations,
-        ]);
+        $company->save();
 
         return response()->json($company);
     }
@@ -133,8 +156,12 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Company not found'], 404);
         }
 
-        if ($company->photo && Storage::disk('public')->exists($company->photo)) {
-            Storage::disk('public')->delete($company->photo);
+        // Delete the photo if it exists
+        if ($company->photo) {
+            $photoPath = public_path($this->imagePath . '/' . $company->photo);
+            if (file_exists($photoPath)) {
+                unlink($photoPath);
+            }
         }
 
         $company->delete();
