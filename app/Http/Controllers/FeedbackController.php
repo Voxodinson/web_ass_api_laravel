@@ -4,30 +4,48 @@ namespace App\Http\Controllers;
 use App\Models\Feedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class FeedbackController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);  // Default per page value is 10
-        $page = $request->get('page', 1);  // Default to the first page if not provided
-
-        $feedbacks = Feedback::with('user:id,name,profile')->paginate($perPage);
-
-        $feedbacks->getCollection()->transform(function ($feedback) {
-            $userProfile = json_decode($feedback->user->profile, true);
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
+    
+        $feedbacks = Feedback::with('user:id,name,profile')
+            ->paginate($perPage);
+    
+        $transformedFeedbacks = $feedbacks->getCollection()->map(function ($feedback) {
+            $userName = $feedback->user ? $feedback->user->name : null;
+            $userProfile = $feedback->user ? json_decode($feedback->user->profile, true) : null;
+            $image = null;
+    
+            if ($feedback->user && $feedback->user->profile) {
+                // Check if profile data looks like JSON
+                if (is_array(json_decode($feedback->user->profile, true))) {
+                    // It's likely JSON, try to get the 'profile' key
+                    $image = $userProfile['profile'] ?? $userProfile['avatar'] ?? $userProfile['avatar_url'] ?? null;
+                } else {
+                    // It's likely a direct string URL
+                    $image = $feedback->user->profile;
+                }
+            } else {
+                Log::warning('No user or profile data for feedback ID: ' . $feedback->id);
+            }
+    
             return [
                 'id' => $feedback->id,
                 'title' => $feedback->title,
                 'description' => $feedback->description,
-                'user_name' => $feedback->user->name,
-                'user_photo' => $userProfile,
+                'user_name' => $userName,
+                'image' => $image,
             ];
         });
-
+    
         return response()->json([
             'message' => 'Feedbacks retrieved successfully.',
-            'data' => $feedbacks->getCollection(),
+            'data' => $transformedFeedbacks,
             'total' => $feedbacks->total(),
             'per_page' => $feedbacks->perPage(),
             'last_page' => $feedbacks->lastPage(),
@@ -35,11 +53,13 @@ class FeedbackController extends Controller
         ]);
     }
 
-    
+
     public function show($id)
     {
         $feedback = Feedback::with('user:id,name,profile')->findOrFail($id);
-        $userProfile = json_decode($feedback->user->profile, true);
+        $userName = $feedback->user ? $feedback->user->name : null;
+        $userProfile = $feedback->user ? json_decode($feedback->user->profile, true) : null;
+        $userPhoto = $userProfile['profile'] ?? null;
 
         return response()->json([
             'message' => 'Feedback retrieved successfully.',
@@ -47,8 +67,8 @@ class FeedbackController extends Controller
                 'id' => $feedback->id,
                 'title' => $feedback->title,
                 'description' => $feedback->description,
-                'user_name' => $feedback->user->name,
-                'user_photo' => $userProfile['profile'] ?? null,
+                'user_name' => $userName,
+                'user_photo' => $userPhoto,
             ]
         ]);
     }
