@@ -38,7 +38,7 @@ Route::prefix('public')->group(function () {
     
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
 
-    Route::get('social', [SocialMediaController::class, 'index']);
+    Route::get('/social', [SocialMediaController::class, 'index']);
 });
 
 //company management
