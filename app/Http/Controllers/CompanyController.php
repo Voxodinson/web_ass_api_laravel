@@ -27,7 +27,6 @@ class CompanyController extends Controller
 
         $companies->getCollection()->transform(function ($company) {
             $company->photo_url = $company->photo ? asset($this->imagePath . '/' . $company->photo) : null;
-            $company->store_locations = json_decode($company->store_locations);
             return $company;
         });
 
@@ -52,7 +51,7 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'store_locations' => 'nullable|json',
+            'store_locations' => 'nullable|string', // Changed to string
         ]);
 
         $company = new Company([
@@ -62,7 +61,7 @@ class CompanyController extends Controller
             'address' => $request->address,
             'website' => $request->website,
             'description' => $request->description,
-            'store_locations' => $request->store_locations ? json_decode($request->store_locations, true) : null,
+            'store_locations' => $request->store_locations, // Store as string
         ]);
 
         if ($request->hasFile('photo')) {
@@ -90,7 +89,6 @@ class CompanyController extends Controller
         }
 
         $company->photo_url = $company->photo ? asset($this->imagePath . '/' . $company->photo) : null;
-        $company->store_locations = json_decode($company->store_locations);
 
         return response()->json($company);
     }
@@ -112,7 +110,7 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'store_locations' => 'nullable|json',
+            'store_locations' => 'nullable|string', // Changed to string
         ]);
 
         $company->name = $request->name ?? $company->name;
@@ -121,7 +119,7 @@ class CompanyController extends Controller
         $company->address = $request->address ?? $company->address;
         $company->website = $request->website ?? $company->website;
         $company->description = $request->description ?? $company->description;
-        $company->store_locations = $request->store_locations ? json_decode($request->store_locations, true) : $company->store_locations;
+        $company->store_locations = $request->store_locations ?? $company->store_locations; // Store as string
 
         if ($request->hasFile('photo')) {
             $uploadPath = public_path($this->imagePath);
