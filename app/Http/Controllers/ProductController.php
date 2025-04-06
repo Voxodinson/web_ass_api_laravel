@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class ProductController extends Controller
 {
@@ -34,7 +35,7 @@ class ProductController extends Controller
     $products = $query->get();
 
     $products->transform(function ($product) {
-        $decodedImages = json_decode($product->images, true); // Line 37
+        $decodedImages = json_decode($product->images, true) ?? [];
         $product->images = $this->generateImageUrls($decodedImages);
         $product->image = isset($decodedImages[0]) ? asset('uploads/images/products/' . $decodedImages[0]) : null;
         return $product;
@@ -54,7 +55,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        $product->images = json_decode($product->images, true);
+        $product->images = json_decode($product->images, true) ?? [];
         $product->image_urls = $this->generateImageUrls($product->images);
 
         return response()->json($product);
@@ -82,8 +83,8 @@ class ProductController extends Controller
         $imageFilenames = [];
         if ($request->hasFile('images')) {
             $uploadPath = public_path($this->imagePath);
-            if (!file_exists($uploadPath)) {
-                mkdir($uploadPath, 0755, true);
+            if (!File::exists($uploadPath)) {
+                File::makeDirectory($uploadPath, 0755, true);
             }
             foreach ($request->file('images') as $image) {
                 $filename = $image->hashName();
@@ -118,27 +119,47 @@ class ProductController extends Controller
             'category' => 'nullable|string',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'old_images' => 'sometimes|array', // Expecting an array of image URLs to keep
             'rating' => 'nullable|numeric|min:0|max:5',
             'product_type' => 'sometimes|string|in:men,women,kids',
         ]);
 
-        $product->update($request->except('images'));
+        $product->update($request->except(['images', 'old_images']));
 
-        if ($request->hasFile('images')) {
-            $uploadPath = public_path($this->imagePath);
-            if (!file_exists($uploadPath)) {
-                mkdir($uploadPath, 0755, true);
-            }
+        $existingImages = json_decode($product->images, true) ?? [];
+        $uploadPath = public_path($this->imagePath);
+        $imagesToKeepFilenames = [];
 
-            $oldImages = json_decode($product->images, true);
-            foreach ($oldImages as $oldImage) {
-                $oldImagePath = public_path($this->imagePath . '/' . $oldImage);
-                if (file_exists($oldImagePath)) {
-                    unlink($oldImagePath);
+        // Handle which existing images to keep
+        if ($request->has('old_images') && is_array($request->old_images)) {
+            foreach ($existingImages as $filename) {
+                $imageUrl = asset($this->imagePath . '/' . $filename);
+                if (in_array($imageUrl, $request->old_images)) {
+                    $imagesToKeepFilenames[] = $filename;
+                } else {
+                    // Delete the image file if it's not in the old_images array
+                    $oldImagePath = $uploadPath . '/' . $filename;
+                    if (File::exists($oldImagePath)) {
+                        File::delete($oldImagePath);
+                    }
                 }
             }
+        } else {
+            // If no old_images are sent, we assume all existing should be removed
+            foreach ($existingImages as $filename) {
+                $oldImagePath = $uploadPath . '/' . $filename;
+                if (File::exists($oldImagePath)) {
+                    File::delete($oldImagePath);
+                }
+            }
+        }
 
-            $newImageFilenames = [];
+        // Handle new images
+        $newImageFilenames = [];
+        if ($request->hasFile('images')) {
+            if (!File::exists($uploadPath)) {
+                File::makeDirectory($uploadPath, 0755, true);
+            }
             foreach ($request->file('images') as $image) {
                 if ($image->isValid()) {
                     $filename = $image->hashName();
@@ -146,10 +167,13 @@ class ProductController extends Controller
                     $newImageFilenames[] = $filename;
                 }
             }
-
-            $product->images = json_encode($newImageFilenames);
-            $product->save();
         }
+
+        // Merge the images to keep with the newly uploaded images
+        $allImages = array_merge($imagesToKeepFilenames, $newImageFilenames);
+
+        $product->images = json_encode(array_unique($allImages));
+        $product->save();
 
         return response()->json([
             'message' => 'Product updated successfully',
@@ -165,11 +189,12 @@ class ProductController extends Controller
         }
 
         // Delete product images from the public directory
-        $images = json_decode($product->images, true);
+        $images = json_decode($product->images, true) ?? [];
+        $uploadPath = public_path($this->imagePath);
         foreach ($images as $image) {
-            $imagePath = public_path($this->imagePath . '/' . $image);
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
+            $imagePath = $uploadPath . '/' . $image;
+            if (File::exists($imagePath)) {
+                File::delete($imagePath);
             }
         }
 
