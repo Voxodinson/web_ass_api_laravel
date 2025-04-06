@@ -15,9 +15,9 @@ class SocialMediaController extends Controller
 
         $socialMedias->getCollection()->transform(function ($socialMedia) {
             if ($socialMedia->photo) {
-                $socialMedia->photo_url = asset($this->imagePath . '/' . $socialMedia->photo);
+                $socialMedia->image = asset($this->imagePath . '/' . $socialMedia->photo);
             } else {
-                $socialMedia->photo_url = null;
+                $socialMedia->image = null;
             }
             return $socialMedia;
         });

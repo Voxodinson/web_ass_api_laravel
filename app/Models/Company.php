@@ -15,6 +15,7 @@ class Company extends Model
         'address',
         'website',
         'description',
+        'store_locations', // Add 'store_locations' to the fillable array
     ];
 
     // Cast the 'phone' field to an array

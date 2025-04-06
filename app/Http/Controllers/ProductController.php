@@ -34,7 +34,7 @@ class ProductController extends Controller
     $products = $query->get();
 
     $products->transform(function ($product) {
-        $decodedImages = json_decode($product->images, true);
+        $decodedImages = json_decode($product->images, true); // Line 37
         $product->images = $this->generateImageUrls($decodedImages);
         $product->image = isset($decodedImages[0]) ? asset('uploads/images/products/' . $decodedImages[0]) : null;
         return $product;
