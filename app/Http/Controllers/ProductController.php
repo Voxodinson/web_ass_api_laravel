@@ -119,7 +119,7 @@ class ProductController extends Controller
             'category' => 'nullable|string',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'old_images' => 'sometimes|array', // Expecting an array of image URLs to keep
+            'old_images' => 'sometimes|array',
             'rating' => 'nullable|numeric|min:0|max:5',
             'product_type' => 'sometimes|string|in:men,women,kids',
         ]);
@@ -130,14 +130,12 @@ class ProductController extends Controller
         $uploadPath = public_path($this->imagePath);
         $imagesToKeepFilenames = [];
 
-        // Handle which existing images to keep
         if ($request->has('old_images') && is_array($request->old_images)) {
             foreach ($existingImages as $filename) {
                 $imageUrl = asset($this->imagePath . '/' . $filename);
                 if (in_array($imageUrl, $request->old_images)) {
                     $imagesToKeepFilenames[] = $filename;
                 } else {
-                    // Delete the image file if it's not in the old_images array
                     $oldImagePath = $uploadPath . '/' . $filename;
                     if (File::exists($oldImagePath)) {
                         File::delete($oldImagePath);
@@ -145,7 +143,6 @@ class ProductController extends Controller
                 }
             }
         } else {
-            // If no old_images are sent, we assume all existing should be removed
             foreach ($existingImages as $filename) {
                 $oldImagePath = $uploadPath . '/' . $filename;
                 if (File::exists($oldImagePath)) {
@@ -169,7 +166,6 @@ class ProductController extends Controller
             }
         }
 
-        // Merge the images to keep with the newly uploaded images
         $allImages = array_merge($imagesToKeepFilenames, $newImageFilenames);
 
         $product->images = json_encode(array_unique($allImages));
