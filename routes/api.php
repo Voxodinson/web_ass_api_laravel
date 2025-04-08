@@ -8,8 +8,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\SocialMediaController;
-
-
+use App\Http\Controllers\DashboardController;
 // user
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'create']);
@@ -74,4 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('social/{id}', [SocialMediaController::class, 'show']);
     Route::put('social/{id}', [SocialMediaController::class, 'update']);
     Route::delete('social/{id}', [SocialMediaController::class, 'destroy']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/dashboard/overview', [DashboardController::class, 'overview']);
 });
