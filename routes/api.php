@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 // user
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'create']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [UserController::class, 'logout']);
     Route::put('/update/{id}', [UserController::class, 'update']);
@@ -35,6 +36,9 @@ Route::prefix('public')->group(function () {
     Route::get('/user/products', [ProductController::class, 'index']);
     Route::get('/user/products/{id}', [ProductController::class, 'show']);
     
+    Route::get('/companies', [CompanyController::class, 'index']);
+
+    Route::get('/companies/{id}', [CompanyController::class, 'show']);
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
 
     Route::get('/social', [SocialMediaController::class, 'index']);
