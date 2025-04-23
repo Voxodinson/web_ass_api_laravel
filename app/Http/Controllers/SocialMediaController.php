@@ -119,7 +119,6 @@ class SocialMediaController extends Controller
     {
         $socialMedia = SocialMedia::findOrFail($id);
 
-        // Delete the photo if it exists
         if ($socialMedia->photo) {
             $photoPath = public_path($this->imagePath . '/' . $socialMedia->photo);
             if (file_exists($photoPath)) {

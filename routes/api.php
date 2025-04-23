@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/companies/{id}', [CompanyController::class, 'destroy']);
 });
 
+//order management
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('orders', [OrderController::class, 'index']);
     Route::post('orders', [OrderController::class, 'store']);

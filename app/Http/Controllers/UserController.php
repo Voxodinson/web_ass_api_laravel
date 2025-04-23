@@ -10,7 +10,6 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
-    // Register User
     public function create(Request $request)
     {
         $validated = $request->validate([
@@ -32,13 +31,12 @@ class UserController extends Controller
             'dob' => $validated['dob'],
         ]);
 
-        // Handle profile image upload after user creation
         $profileUrl = null;
         if ($request->hasFile('profile')) {
             $uploadPath = public_path('uploads/images/users');
 
             if (!file_exists($uploadPath)) {
-                mkdir($uploadPath, 0755, true); // Create directory if it doesn't exist
+                mkdir($uploadPath, 0755, true);
             }
 
             $profile = $request->file('profile');
@@ -46,7 +44,7 @@ class UserController extends Controller
             $profile->move($uploadPath, $filename);
             $profileUrl = asset('uploads/images/users/' . $filename);
             $user->profile = $profileUrl;
-            $user->save(); // Save the profile URL to the user model
+            $user->save();
         }
 
         return response()->json([
@@ -85,8 +83,6 @@ class UserController extends Controller
         ]);
     }
 
-    // Logout User
-
     public function logout(Request $request)
     {
         $user = Auth::user();
@@ -102,9 +98,6 @@ class UserController extends Controller
         return response()->json(['message' => 'Logged out successfully'], 200);
     }
 
-
-
-    // Update User
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
@@ -120,15 +113,13 @@ class UserController extends Controller
     
         $user->fill($request->only(['name', 'email', 'role', 'address', 'dob']));
     
-        // Handle profile image update
         if ($request->hasFile('profile')) {
             $uploadPath = public_path('uploads/images/users');
     
             if (!file_exists($uploadPath)) {
-                mkdir($uploadPath, 0755, true); // Create directory if it doesn't exist
+                mkdir($uploadPath, 0755, true); 
             }
     
-            // Delete the old profile image if it exists
             if ($user->profile) {
                 $oldProfilePath = public_path(str_replace(asset('/'), '', $user->profile));
                 if (file_exists($oldProfilePath)) {
@@ -173,8 +164,7 @@ class UserController extends Controller
             'data' => $users,
         ]);
     }
-
-    // Get a Single User
+    
     public function show($id)
     {
         $user = User::findOrFail($id);
@@ -182,7 +172,6 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // Delete User
     public function destroy($id)
     {
         $user = User::findOrFail($id);

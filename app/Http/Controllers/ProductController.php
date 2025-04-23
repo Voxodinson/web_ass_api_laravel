@@ -151,7 +151,6 @@ class ProductController extends Controller
             }
         }
 
-        // Handle new images
         $newImageFilenames = [];
         if ($request->hasFile('images')) {
             if (!File::exists($uploadPath)) {
@@ -184,7 +183,6 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        // Delete product images from the public directory
         $images = json_decode($product->images, true) ?? [];
         $uploadPath = public_path($this->imagePath);
         foreach ($images as $image) {

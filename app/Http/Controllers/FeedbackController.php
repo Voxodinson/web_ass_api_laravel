@@ -22,12 +22,9 @@ class FeedbackController extends Controller
             $image = null;
     
             if ($feedback->user && $feedback->user->profile) {
-                // Check if profile data looks like JSON
                 if (is_array(json_decode($feedback->user->profile, true))) {
-                    // It's likely JSON, try to get the 'profile' key
                     $image = $userProfile['profile'] ?? $userProfile['avatar'] ?? $userProfile['avatar_url'] ?? null;
                 } else {
-                    // It's likely a direct string URL
                     $image = $feedback->user->profile;
                 }
             } else {

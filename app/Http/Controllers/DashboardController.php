@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    /**
-     * Get all necessary dashboard data in a single overview endpoint.
-     */
     public function overview(): JsonResponse
     {
         $totalOrders = Order::count();
@@ -22,11 +19,11 @@ class DashboardController extends Controller
 
         $recentOrders = Order::with(['user:id,name,email', 'orderItems.product:id,name'])
             ->latest()
-            ->take(5) // Reduced to 5 for the overview
+            ->take(5)
             ->get(['id', 'user_id', 'total_amount', 'payment_status', 'created_at']);
 
         $salesOverview = Order::selectRaw('DATE(created_at) as sale_date, SUM(total_amount) as total_sales')
-            ->where('created_at', '>=', now()->subDays(7)) // Reduced to last 7 days for the overview
+            ->where('created_at', '>=', now()->subDays(7))
             ->groupBy('sale_date')
             ->orderBy('sale_date')
             ->get();
@@ -35,7 +32,7 @@ class DashboardController extends Controller
             ->select('product_id', DB::raw('SUM(quantity) as total_sold'))
             ->groupBy('product_id')
             ->orderByDesc('total_sold')
-            ->take(3) // Reduced to top 3 for the overview
+            ->take(3)
             ->get();
 
         $newCustomersLastMonth = User::where('created_at', '>=', now()->subMonth())->count();

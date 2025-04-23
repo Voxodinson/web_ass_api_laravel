@@ -51,7 +51,7 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'store_locations' => 'nullable|string', // Changed to string
+            'store_locations' => 'nullable|string',
         ]);
 
         $company = new Company([
@@ -61,7 +61,7 @@ class CompanyController extends Controller
             'address' => $request->address,
             'website' => $request->website,
             'description' => $request->description,
-            'store_locations' => $request->store_locations, // Store as string
+            'store_locations' => $request->store_locations,
         ]);
 
         if ($request->hasFile('photo')) {
@@ -110,7 +110,7 @@ class CompanyController extends Controller
             'website' => 'nullable|url',
             'description' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'store_locations' => 'nullable|string', // Changed to string
+            'store_locations' => 'nullable|string',
         ]);
 
         $company->name = $request->name ?? $company->name;
@@ -119,7 +119,7 @@ class CompanyController extends Controller
         $company->address = $request->address ?? $company->address;
         $company->website = $request->website ?? $company->website;
         $company->description = $request->description ?? $company->description;
-        $company->store_locations = $request->store_locations ?? $company->store_locations; // Store as string
+        $company->store_locations = $request->store_locations ?? $company->store_locations;
 
         if ($request->hasFile('photo')) {
             $uploadPath = public_path($this->imagePath);
@@ -127,7 +127,6 @@ class CompanyController extends Controller
                 mkdir($uploadPath, 0755, true);
             }
 
-            // Delete the old photo if it exists
             if ($company->photo) {
                 $oldPhotoPath = public_path($this->imagePath . '/' . $company->photo);
                 if (file_exists($oldPhotoPath)) {
@@ -154,7 +153,6 @@ class CompanyController extends Controller
             return response()->json(['message' => 'Company not found'], 404);
         }
 
-        // Delete the photo if it exists
         if ($company->photo) {
             $photoPath = public_path($this->imagePath . '/' . $company->photo);
             if (file_exists($photoPath)) {
