@@ -41,6 +41,7 @@ Route::prefix('public')->group(function () {
     Route::get('/companies/{id}', [CompanyController::class, 'show']);
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
 
+    Route::get('/orders/user/{userId}', [OrderController::class, 'getByUser']);
     Route::get('/social', [SocialMediaController::class, 'index']);
 });
 
@@ -59,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
     Route::put('orders/{id}', [OrderController::class, 'update']);
+    Route::get('/orders/user/{userId}', [OrderController::class, 'getByUser']);
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 });
 

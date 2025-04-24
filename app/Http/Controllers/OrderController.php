@@ -88,7 +88,44 @@ class OrderController extends Controller
             'order' => $order,
         ], 201);
     }
-
+    
+    public function getByUser($userId, Request $request)
+    {
+        $perPage = $request->get('per_page', 10);
+    
+        $orders = Order::where('user_id', $userId)
+            ->with([
+                'orderItems.product:id,name,images',
+                'user:id,name,email'
+            ])
+            ->paginate($perPage);
+    
+        $ordersData = $orders->map(function ($order) {
+            return array_merge($order->toArray(), [
+                'user_name' => $order->user?->name,
+                'user_email' => $order->user?->email,
+                'order_items' => $order->orderItems->map(function ($item) {
+                    $product = $item->product;
+                    return array_merge($item->toArray(), [
+                        'product_name' => $product ? $product->name : 'N/A',
+                        'image' => $product && is_array(json_decode($product->images, true)) && count(json_decode($product->images, true)) > 0
+                            ? asset('uploads/images/products/' . json_decode($product->images, true)[0])
+                            : null,
+                    ]);
+                }),
+            ]);
+        });
+    
+        return response()->json([
+            'message' => 'Orders retrieved successfully.',
+            'data' => $ordersData,
+            'total' => $orders->total(),
+            'per_page' => $orders->perPage(),
+            'current_page' => $orders->currentPage(),
+            'last_page' => $orders->lastPage(),
+        ]);
+    }
+    
     public function show($id)
     {
         $order = Order::with(['orderItems.product:id,name,images', 'user:id,name,email'])->findOrFail($id);

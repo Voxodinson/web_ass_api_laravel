@@ -118,7 +118,7 @@ class ProductController extends Controller
             'brand' => 'nullable|string',
             'category' => 'nullable|string',
             'images' => 'sometimes|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,avif',
             'old_images' => 'sometimes|array',
             'rating' => 'nullable|numeric|min:0|max:5',
             'product_type' => 'sometimes|string|in:men,women,kids',
