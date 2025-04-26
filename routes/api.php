@@ -42,6 +42,9 @@ Route::prefix('public')->group(function () {
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
 
     Route::get('/orders/user/{userId}', [OrderController::class, 'getByUser']);
+
+    Route::post('/orders', [OrderController::class, 'store']);
+    
     Route::get('/social', [SocialMediaController::class, 'index']);
 });
 

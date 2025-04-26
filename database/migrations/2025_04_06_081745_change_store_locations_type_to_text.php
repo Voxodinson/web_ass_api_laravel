@@ -22,7 +22,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            // If you need to revert, change it back to json (if that was the original intent)
             // $table->json('store_locations')->nullable()->change();
         });
     }
